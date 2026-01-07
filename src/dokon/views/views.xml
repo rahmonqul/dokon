@@ -1,0 +1,60 @@
+<odoo>
+  <data>
+    <!-- explicit list view definition -->
+<!--
+    <record model="ir.ui.view" id="dokon.list">
+      <field name="name">dokon list</field>
+      <field name="model">dokon.dokon</field>
+      <field name="arch" type="xml">
+        <list>
+          <field name="name"/>
+          <field name="value"/>
+          <field name="value2"/>
+        </list>
+      </field>
+    </record>
+-->
+
+    <!-- actions opening views on models -->
+<!--
+    <record model="ir.actions.act_window" id="dokon.action_window">
+      <field name="name">dokon window</field>
+      <field name="res_model">dokon.dokon</field>
+      <field name="view_mode">list,form</field>
+    </record>
+-->
+
+    <!-- server action to the one above -->
+<!--
+    <record model="ir.actions.server" id="dokon.action_server">
+      <field name="name">dokon server</field>
+      <field name="model_id" ref="model_dokon_dokon"/>
+      <field name="state">code</field>
+      <field name="code">
+        action = {
+          "type": "ir.actions.act_window",
+          "view_mode": "list,form",
+          "res_model": model._name,
+        }
+      </field>
+    </record>
+-->
+
+    <!-- Top menu item -->
+<!--
+    <menuitem name="dokon" id="dokon.menu_root"/>
+-->
+    <!-- menu categories -->
+<!--
+    <menuitem name="Menu 1" id="dokon.menu_1" parent="dokon.menu_root"/>
+    <menuitem name="Menu 2" id="dokon.menu_2" parent="dokon.menu_root"/>
+-->
+    <!-- actions -->
+<!--
+    <menuitem name="List" id="dokon.menu_1_list" parent="dokon.menu_1"
+              action="dokon.action_window"/>
+    <menuitem name="Server to list" id="dokon" parent="dokon.menu_2"
+              action="dokon.action_server"/>
+-->
+  </data>
+</odoo>

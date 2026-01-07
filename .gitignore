@@ -1,0 +1,77 @@
+
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.log
+
+# Virtual environment
+venv/
+.env/
+.env.*
+
+# =========================
+# Odoo runtime files
+# =========================
+.odoo-server
+*.pid
+*.lock
+
+# =========================
+# Odoo filestore (ENG MUHIM)
+# =========================
+/data/filestore/
+/odoo/filestore/
+/var/lib/odoo/filestore/
+
+# Agar custom path bo‘lsa
+filestore/
+
+# =========================
+# Odoo config (agar ichida parol bo‘lsa)
+# =========================
+
+
+# =========================
+# Database dump / backup
+# =========================
+*.dump
+*.sql
+*.backup
+backups/
+dump/
+
+# =========================
+# Logs
+# =========================
+logs/
+*.log
+
+# =========================
+# IDE / OS
+# =========================
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# =========================
+# Build / cache
+# =========================
+.eggs/
+*.egg-info/
+dist/
+build/
+
+# =========================
+# Node (agar frontend bo‘lsa)
+# =========================
+node_modules/
+
+# =========================
+# Docker
+# =========================
+docker-data/
