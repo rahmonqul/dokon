@@ -266,14 +266,39 @@ class AccountPaymentRegister(models.TransientModel):
             if sale_order.picking_ids:
                 for picking in sale_order.picking_ids:
                     _logger.info("Processing Picking | Picking ID: %s | State: %s | Name: %s", picking.id, picking.state, picking.name)
+                    # State'ni yangilash uchun refresh qilish
+                    picking.invalidate_recordset(['state'])
+                    picking = self.env['stock.picking'].browse(picking.id)
+                    _logger.info("Picking state after refresh | Picking ID: %s | State: %s", picking.id, picking.state)
+                    
                     if picking.state == 'draft':
                         _logger.info("Confirming picking | Picking ID: %s", picking.id)
-                        picking.action_confirm()
-                        _logger.info("Picking confirmed | Picking ID: %s | New state: %s", picking.id, picking.state)
+                        try:
+                            picking.action_confirm()
+                            # State'ni yangilash
+                            picking.invalidate_recordset(['state'])
+                            picking = self.env['stock.picking'].browse(picking.id)
+                            _logger.info("Picking confirmed | Picking ID: %s | New state: %s", picking.id, picking.state)
+                        except Exception as e:
+                            _logger.error("Error confirming picking | Picking ID: %s | Error: %s", picking.id, str(e))
+                            continue
+                    
+                    # State'ni yana yangilash
+                    picking.invalidate_recordset(['state'])
+                    picking = self.env['stock.picking'].browse(picking.id)
+                    _logger.info("Picking state before assign | Picking ID: %s | State: %s", picking.id, picking.state)
+                    
                     if picking.state == 'confirmed':
                         _logger.info("Assigning picking | Picking ID: %s", picking.id)
-                        picking.action_assign()
-                        _logger.info("Picking assigned | Picking ID: %s | New state: %s", picking.id, picking.state)
+                        try:
+                            picking.action_assign()
+                            # State'ni yangilash
+                            picking.invalidate_recordset(['state'])
+                            picking = self.env['stock.picking'].browse(picking.id)
+                            _logger.info("Picking assigned | Picking ID: %s | New state: %s", picking.id, picking.state)
+                        except Exception as e:
+                            _logger.error("Error assigning picking | Picking ID: %s | Error: %s", picking.id, str(e))
+                            # Xatolik bo'lsa ham davom etish
                     
                     # Agar mahsulot omborda yetarli bo'lmasa, "create brokered" (minusga sotish) qilish
                     # Barcha move'lar uchun qty_done ni belgilash
@@ -313,27 +338,36 @@ class AccountPaymentRegister(models.TransientModel):
                                     move_line.qty_done = move.product_uom_qty
                     
                     # Validate qilish - agar mahsulot yetarli bo'lmasa, "create brokered" (minusga sotish) qilish
+                    # State'ni yangilash
+                    picking.invalidate_recordset(['state'])
+                    picking = self.env['stock.picking'].browse(picking.id)
+                    _logger.info("Picking state before validate | Picking ID: %s | State: %s", picking.id, picking.state)
+                    
                     if picking.state in ('assigned', 'partially_available', 'waiting', 'confirmed'):
                         _logger.info("Validating picking | Picking ID: %s | State: %s", picking.id, picking.state)
-                        # Context orqali backorder yaratmaslik va immediate transfer qilish
-                        # skip_backorder=True - backorder wizard'ni ochmaslik
-                        # cancel_backorder=True - backorder yaratmaslik
-                        result = picking.with_context(
-                            skip_backorder=True,
-                            cancel_backorder=True,
-                            skip_sanity_check=True
-                        ).button_validate()
-                        _logger.info("Picking validated | Picking ID: %s | Result: %s", picking.id, result)
-                        
-                        # Agar backorder wizard ochilsa, uni yopish va to'g'ridan-to'g'ri validate qilish
-                        if result and isinstance(result, dict) and result.get('res_model') == 'stock.backorder.confirmation':
-                            _logger.info("Backorder wizard detected, closing and validating directly | Picking ID: %s", picking.id)
-                            # Backorder wizard'ni yopish va to'g'ridan-to'g'ri validate qilish
-                            picking.with_context(
+                        try:
+                            # Context orqali backorder yaratmaslik va immediate transfer qilish
+                            # skip_backorder=True - backorder wizard'ni ochmaslik
+                            # cancel_backorder=True - backorder yaratmaslik
+                            result = picking.with_context(
+                                skip_backorder=True,
                                 cancel_backorder=True,
                                 skip_sanity_check=True
-                            )._action_done()
-                            _logger.info("Picking validated directly | Picking ID: %s | New state: %s", picking.id, picking.state)
+                            ).button_validate()
+                            _logger.info("Picking validated | Picking ID: %s | Result: %s", picking.id, result)
+                            
+                            # Agar backorder wizard ochilsa, uni yopish va to'g'ridan-to'g'ri validate qilish
+                            if result and isinstance(result, dict) and result.get('res_model') == 'stock.backorder.confirmation':
+                                _logger.info("Backorder wizard detected, closing and validating directly | Picking ID: %s", picking.id)
+                                # Backorder wizard'ni yopish va to'g'ridan-to'g'ri validate qilish
+                                picking.with_context(
+                                    cancel_backorder=True,
+                                    skip_sanity_check=True
+                                )._action_done()
+                                _logger.info("Picking validated directly | Picking ID: %s | New state: %s", picking.id, picking.state)
+                        except Exception as e:
+                            _logger.error("Error validating picking | Picking ID: %s | Error: %s", picking.id, str(e))
+                            # Xatolik bo'lsa ham davom etish
             
             # Muvaffaqiyatli xabar ko'rsatish va wizard oynasini yopish
             _logger.info("=" * 80)
@@ -373,14 +407,39 @@ class AccountPaymentRegister(models.TransientModel):
             if purchase_order.picking_ids:
                 for picking in purchase_order.picking_ids:
                     _logger.info("Processing Picking | Picking ID: %s | State: %s | Name: %s", picking.id, picking.state, picking.name)
+                    # State'ni yangilash uchun refresh qilish
+                    picking.invalidate_recordset(['state'])
+                    picking = self.env['stock.picking'].browse(picking.id)
+                    _logger.info("Picking state after refresh | Picking ID: %s | State: %s", picking.id, picking.state)
+                    
                     if picking.state == 'draft':
                         _logger.info("Confirming picking | Picking ID: %s", picking.id)
-                        picking.action_confirm()
-                        _logger.info("Picking confirmed | Picking ID: %s | New state: %s", picking.id, picking.state)
+                        try:
+                            picking.action_confirm()
+                            # State'ni yangilash
+                            picking.invalidate_recordset(['state'])
+                            picking = self.env['stock.picking'].browse(picking.id)
+                            _logger.info("Picking confirmed | Picking ID: %s | New state: %s", picking.id, picking.state)
+                        except Exception as e:
+                            _logger.error("Error confirming picking | Picking ID: %s | Error: %s", picking.id, str(e))
+                            continue
+                    
+                    # State'ni yana yangilash
+                    picking.invalidate_recordset(['state'])
+                    picking = self.env['stock.picking'].browse(picking.id)
+                    _logger.info("Picking state before assign | Picking ID: %s | State: %s", picking.id, picking.state)
+                    
                     if picking.state == 'confirmed':
                         _logger.info("Assigning picking | Picking ID: %s", picking.id)
-                        picking.action_assign()
-                        _logger.info("Picking assigned | Picking ID: %s | New state: %s", picking.id, picking.state)
+                        try:
+                            picking.action_assign()
+                            # State'ni yangilash
+                            picking.invalidate_recordset(['state'])
+                            picking = self.env['stock.picking'].browse(picking.id)
+                            _logger.info("Picking assigned | Picking ID: %s | New state: %s", picking.id, picking.state)
+                        except Exception as e:
+                            _logger.error("Error assigning picking | Picking ID: %s | Error: %s", picking.id, str(e))
+                            # Xatolik bo'lsa ham davom etish
                     
                     # Barcha move'lar uchun qty_done ni belgilash
                     for move in picking.move_ids:
@@ -415,23 +474,43 @@ class AccountPaymentRegister(models.TransientModel):
                                     move_line.qty_done = move.product_uom_qty
                     
                     # Validate qilish
+                    # State'ni yangilash
+                    picking.invalidate_recordset(['state'])
+                    picking = self.env['stock.picking'].browse(picking.id)
+                    _logger.info("Picking state before validate | Picking ID: %s | State: %s", picking.id, picking.state)
+                    
                     if picking.state in ('assigned', 'partially_available', 'waiting', 'confirmed'):
                         _logger.info("Validating picking | Picking ID: %s | State: %s", picking.id, picking.state)
-                        result = picking.with_context(
-                            skip_backorder=True,
-                            cancel_backorder=True,
-                            skip_sanity_check=True
-                        ).button_validate()
-                        _logger.info("Picking validated | Picking ID: %s | Result: %s", picking.id, result)
-                        
-                        # Agar backorder wizard ochilsa, uni yopish va to'g'ridan-to'g'ri validate qilish
-                        if result and isinstance(result, dict) and result.get('res_model') == 'stock.backorder.confirmation':
-                            _logger.info("Backorder wizard detected, closing and validating directly | Picking ID: %s", picking.id)
-                            picking.with_context(
+                        try:
+                            result = picking.with_context(
+                                skip_backorder=True,
                                 cancel_backorder=True,
                                 skip_sanity_check=True
-                            )._action_done()
-                            _logger.info("Picking validated directly | Picking ID: %s | New state: %s", picking.id, picking.state)
+                            ).button_validate()
+                            _logger.info("Picking validated | Picking ID: %s | Result: %s", picking.id, result)
+                            
+                            # Agar backorder wizard yoki SMS wizard ochilsa, uni yopish va to'g'ridan-to'g'ri validate qilish
+                            if result and isinstance(result, dict):
+                                res_model = result.get('res_model')
+                                if res_model == 'stock.backorder.confirmation':
+                                    _logger.info("Backorder wizard detected, closing and validating directly | Picking ID: %s", picking.id)
+                                    picking.with_context(
+                                        cancel_backorder=True,
+                                        skip_sanity_check=True
+                                    )._action_done()
+                                    _logger.info("Picking validated directly | Picking ID: %s | New state: %s", picking.id, picking.state)
+                                elif res_model == 'confirm.stock.sms':
+                                    _logger.info("SMS confirmation wizard detected, closing and validating directly | Picking ID: %s", picking.id)
+                                    # SMS wizard'ni yopish va to'g'ridan-to'g'ri validate qilish
+                                    # SMS wizard'ni o'tkazib yuborish uchun to'g'ridan-to'g'ri _action_done() chaqiramiz
+                                    picking.with_context(
+                                        cancel_backorder=True,
+                                        skip_sanity_check=True
+                                    )._action_done()
+                                    _logger.info("Picking validated directly (SMS skipped) | Picking ID: %s | New state: %s", picking.id, picking.state)
+                        except Exception as e:
+                            _logger.error("Error validating picking | Picking ID: %s | Error: %s", picking.id, str(e))
+                            # Xatolik bo'lsa ham davom etish
             
             # Muvaffaqiyatli xabar ko'rsatish va wizard oynasini yopish
             _logger.info("=" * 80)
