@@ -1,60 +1,183 @@
 <odoo>
   <data>
-    <!-- explicit list view definition -->
-<!--
-    <record model="ir.ui.view" id="dokon.list">
-      <field name="name">dokon list</field>
-      <field name="model">dokon.dokon</field>
+    <!-- Sale Order Form View - "Confirm" tugmasini (draft state uchun) "Oplatit" ga almashtirish -->
+    <!-- Bu view birinchi yuklanadi, chunki id yo'q button'ni almashtiradi -->
+    <record id="view_order_form_pay_button_draft" model="ir.ui.view">
+      <field name="name">sale.order.form.pay.button.draft</field>
+      <field name="model">sale.order</field>
+      <field name="inherit_id" ref="sale.view_order_form"/>
       <field name="arch" type="xml">
-        <list>
-          <field name="name"/>
-          <field name="value"/>
-          <field name="value2"/>
-        </list>
+        <!-- Ikkinchi "Confirm" tugmasini (id yo'q) "Oplatit" ga almashtirish -->
+        <xpath expr="//button[@name='action_confirm' and not(@id)]" position="replace">
+          <button name="action_pay" 
+                  data-hotkey="q"
+                  string="Oplatit" 
+                  type="object" 
+                  context="{'validate_analytic': True}"
+                  invisible="state != 'draft'"/>
+        </xpath>
       </field>
     </record>
--->
 
-    <!-- actions opening views on models -->
-<!--
-    <record model="ir.actions.act_window" id="dokon.action_window">
-      <field name="name">dokon window</field>
-      <field name="res_model">dokon.dokon</field>
-      <field name="view_mode">list,form</field>
-    </record>
--->
-
-    <!-- server action to the one above -->
-<!--
-    <record model="ir.actions.server" id="dokon.action_server">
-      <field name="name">dokon server</field>
-      <field name="model_id" ref="model_dokon_dokon"/>
-      <field name="state">code</field>
-      <field name="code">
-        action = {
-          "type": "ir.actions.act_window",
-          "view_mode": "list,form",
-          "res_model": model._name,
-        }
+    <!-- Sale Order Form View - "Confirm" tugmasini (sent state uchun) "Oplatit" ga almashtirish -->
+    <!-- Bu view ikkinchi yuklanadi, chunki id="action_confirm" button'ni almashtiradi -->
+    <record id="view_order_form_pay_button_sent" model="ir.ui.view">
+      <field name="name">sale.order.form.pay.button.sent</field>
+      <field name="model">sale.order</field>
+      <field name="inherit_id" ref="sale.view_order_form"/>
+      <field name="arch" type="xml">
+        <!-- Birinchi "Confirm" tugmasini (id="action_confirm") "Oplatit" ga almashtirish -->
+        <button id="action_confirm" position="replace">
+          <button name="action_pay" 
+                  id="action_pay" 
+                  data-hotkey="q"
+                  string="Oplatit" 
+                  class="btn-primary" 
+                  type="object" 
+                  context="{'validate_analytic': True}"
+                  invisible="state != 'sent'"/>
+        </button>
       </field>
     </record>
--->
 
-    <!-- Top menu item -->
-<!--
-    <menuitem name="dokon" id="dokon.menu_root"/>
--->
-    <!-- menu categories -->
-<!--
-    <menuitem name="Menu 1" id="dokon.menu_1" parent="dokon.menu_root"/>
-    <menuitem name="Menu 2" id="dokon.menu_2" parent="dokon.menu_root"/>
--->
-    <!-- actions -->
-<!--
-    <menuitem name="List" id="dokon.menu_1_list" parent="dokon.menu_1"
-              action="dokon.action_window"/>
-    <menuitem name="Server to list" id="dokon" parent="dokon.menu_2"
-              action="dokon.action_server"/>
--->
+    <!-- Sale Order Line Form View - owner_share maydonini qo'shish -->
+    <record id="view_order_line_form_owner_share" model="ir.ui.view">
+      <field name="name">sale.order.line.form.owner.share</field>
+      <field name="model">sale.order.line</field>
+      <field name="inherit_id" ref="sale.sale_order_line_view_form_readonly"/>
+      <field name="arch" type="xml">
+        <field name="price_subtotal" position="after">
+          <field name="owner_share" readonly="1"/>
+        </field>
+      </field>
+    </record>
+    
+    <!-- Sale Order Form View - order_line ichida owner_share maydonini qo'shish -->
+    <record id="view_order_form_line_owner_share" model="ir.ui.view">
+      <field name="name">sale.order.form.line.owner.share</field>
+      <field name="model">sale.order</field>
+      <field name="inherit_id" ref="sale.view_order_form"/>
+      <field name="arch" type="xml">
+        <xpath expr="//field[@name='order_line']//field[@name='price_subtotal']" position="after">
+          <field name="owner_share" optional="hide" readonly="1"/>
+        </xpath>
+      </field>
+    </record>
+
+    <!-- Sale Order Tree View - owner_share ustunini qo'shish (ixtiyoriy) -->
+    <record id="view_order_tree_owner_share" model="ir.ui.view">
+      <field name="name">sale.order.tree.owner.share</field>
+      <field name="model">sale.order.line</field>
+      <field name="inherit_id" ref="sale.view_order_line_tree"/>
+      <field name="arch" type="xml">
+        <field name="price_subtotal" position="after">
+          <field name="owner_share" optional="hide"/>
+        </field>
+      </field>
+    </record>
+
+    <!-- Product Template Form View - owner_id maydonini qo'shish -->
+    <record id="view_product_template_form_owner" model="ir.ui.view">
+      <field name="name">product.template.form.owner</field>
+      <field name="model">product.template</field>
+      <field name="inherit_id" ref="product.product_template_form_view"/>
+      <field name="arch" type="xml">
+        <field name="categ_id" position="after">
+          <field name="owner_id"/>
+        </field>
+      </field>
+    </record>
+
+    <!-- Invoice Line Form View - owner_id va owner_share maydonlarini qo'shish -->
+    <record id="view_invoice_line_form_owner" model="ir.ui.view">
+      <field name="name">account.move.line.form.owner</field>
+      <field name="model">account.move.line</field>
+      <field name="inherit_id" ref="account.view_move_line_form"/>
+      <field name="arch" type="xml">
+        <field name="balance" position="after">
+          <field name="owner_id"/>
+          <field name="owner_share" readonly="1"/>
+        </field>
+      </field>
+    </record>
+    
+    <!-- Invoice Form View - invoice_line_ids ichida owner_id va owner_share maydonlarini qo'shish -->
+    <record id="view_invoice_form_line_owner" model="ir.ui.view">
+      <field name="name">account.move.form.line.owner</field>
+      <field name="model">account.move</field>
+      <field name="inherit_id" ref="account.view_move_form"/>
+      <field name="arch" type="xml">
+        <xpath expr="//field[@name='invoice_line_ids']//field[@name='price_subtotal']" position="after">
+          <field name="owner_id" optional="hide"/>
+          <field name="owner_share" optional="hide" readonly="1"/>
+        </xpath>
+      </field>
+    </record>
+
+    <!-- Sale Report View - owner_id va owner_share ustunlarini qo'shish -->
+    <record id="view_sale_report_tree_owner" model="ir.ui.view">
+      <field name="name">sale.report.tree.owner</field>
+      <field name="model">sale.report</field>
+      <field name="inherit_id" ref="sale.view_order_product_search"/>
+      <field name="arch" type="xml">
+        <field name="product_id" position="after">
+          <field name="owner_id" optional="hide"/>
+          <field name="owner_share" optional="hide"/>
+        </field>
+      </field>
+    </record>
+
+    <!-- Purchase Order Form View - "Confirm" tugmasini (draft state uchun) "Pay" ga almashtirish -->
+    <record id="view_purchase_order_form_pay_button_draft" model="ir.ui.view">
+      <field name="name">purchase.order.form.pay.button.draft</field>
+      <field name="model">purchase.order</field>
+      <field name="inherit_id" ref="purchase.purchase_order_form"/>
+      <field name="arch" type="xml">
+        <!-- "Confirm" tugmasini (id="draft_confirm") "Pay" ga almashtirish -->
+        <button id="draft_confirm" position="replace">
+          <button name="action_pay" 
+                  id="action_pay_purchase_draft" 
+                  data-hotkey="q"
+                  string="Pay" 
+                  class="oe_highlight" 
+                  type="object" 
+                  context="{'validate_analytic': True}"
+                  invisible="state != 'draft'"/>
+        </button>
+      </field>
+    </record>
+
+    <!-- Purchase Order Form View - "Confirm" tugmasini (sent state uchun) "Pay" ga almashtirish -->
+    <record id="view_purchase_order_form_pay_button_sent" model="ir.ui.view">
+      <field name="name">purchase.order.form.pay.button.sent</field>
+      <field name="model">purchase.order</field>
+      <field name="inherit_id" ref="purchase.purchase_order_form"/>
+      <field name="arch" type="xml">
+        <!-- "Confirm" tugmasini (id="bid_confirm") "Pay" ga almashtirish -->
+        <button id="bid_confirm" position="replace">
+          <button name="action_pay" 
+                  id="action_pay_purchase_sent" 
+                  data-hotkey="q"
+                  string="Pay" 
+                  class="oe_highlight" 
+                  type="object" 
+                  context="{'validate_analytic': True}"
+                  invisible="state != 'sent'"/>
+        </button>
+      </field>
+    </record>
+
+    <!-- Account Payment Register Wizard View - "Discard" tugmasini action_cancel() chaqiradigan qilib o'zgartirish -->
+    <record id="view_account_payment_register_form_cancel" model="ir.ui.view">
+      <field name="name">account.payment.register.form.cancel</field>
+      <field name="model">account.payment.register</field>
+      <field name="inherit_id" ref="account.view_account_payment_register_form"/>
+      <field name="arch" type="xml">
+        <!-- "Discard" tugmasini action_cancel() chaqiradigan qilib o'zgartirish -->
+        <xpath expr="//footer/button[@special='cancel']" position="replace">
+          <button string="Discard" class="btn btn-secondary" name="action_cancel" type="object" data-hotkey="x"/>
+        </xpath>
+      </field>
+    </record>
   </data>
 </odoo>
